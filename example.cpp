@@ -10,6 +10,9 @@ using namespace comnet;
 #include <VehicleTerminationCommand.hpp>
 #include <VehicleWaypointCommand.hpp>
 
+// Dont' know what packet to include? Include them all!!
+#include <Packets.hpp>
+
 //@TODO make call backs for these commands
 
 //uart interface
