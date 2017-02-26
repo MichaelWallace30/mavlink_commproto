@@ -1,3 +1,6 @@
 [submodule "c_uart_interface_example"]
 	path = c_uart_interface_example
 	url = https://github.com/mavlink/c_uart_interface_example
+[submodule "CommProtocol"]
+	path = CommProtocol
+	url = https://github.com/NGCP/CommProtocol
