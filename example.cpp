@@ -1,8 +1,7 @@
-#include <CommProto/architecture/os/comm_mutex.h>
-#include <CommProto/comms.h>
-#include <CommProto/callback.h>
-#include <CommProto/architecture/os/comm_thread.h>
-#include <iostream>
+#include <CommProto/commproto.h>
+
+
+using namespace comnet;
 
 //@TODO fix cmake
 
@@ -154,9 +153,44 @@
 }
 */
 
+// ticks.
+typedef uint32_t tick_t;
+
+tick_t tick = 0;
+tick_t tick_limit = 50;
+
+inline void Tick() {
+  tick++;
+  COMMS_DEBUG("Tick incremented.\n");
+}
+
+inline bool StillTicking() {
+  return tick <= tick_limit;
+}
+
 
 //@TODO make main loop such as xbee_test.cc example code
 int main()
 {
+  Comms uav(2);
+  uav.LoadKey("ngcp calpoly2017");
 
+  // Configure these!
+  uav.InitConnection(ZIGBEE_LINK, "COM#", "address", 1000);
+  uav.AddAddress(1, "address");
+
+
+  uav.Run();
+
+  // Replace nullptr Callbacks!!
+  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new Callback(nullptr));
+  uav.LinkCallback(new ngcp::VehicleTerminationCommand(), new Callback(nullptr));
+  uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new Callback(nullptr));
+
+  while (StillTicking()) {    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    Tick();
+  }
+
+  uav.Stop();
 }
