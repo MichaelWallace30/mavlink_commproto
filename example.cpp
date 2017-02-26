@@ -168,7 +168,15 @@ inline void Tick() {
 }
 
 inline bool StillTicking() {
-  return tick <= tick_limit;
+  return tick <= tick_limit;//what in the retarnation
+}
+
+
+error_t VehicleTelemetryCommandCallback(const comnet::Header& header, const VehicleTelemetryCommand& packet, comnet::Comms& node) {
+
+    //process new telemetry command
+    
+  return comnet::CALLBACK_SUCCESS | comnet::CALLBACK_DESTROY_PACKET;
 }
 
 
@@ -176,17 +184,17 @@ inline bool StillTicking() {
 int main()
 {
   Comms uav(2);
-  uav.LoadKey("ngcp calpoly2017");
+  uav.LoadKey("NGCP PROJECT 2016");
 
   // Configure these!
-  uav.InitConnection(ZIGBEE_LINK, "COM#", "address", 1000);
+  uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
   uav.AddAddress(1, "address");
 
 
   uav.Run();
 
   // Replace nullptr Callbacks!!
-  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new Callback(nullptr));
+  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new comnet::Callback((comnet::callback_t)VehicleTelemetryCommandCallback);
   uav.LinkCallback(new ngcp::VehicleTerminationCommand(), new Callback(nullptr));
   uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new Callback(nullptr));
 
