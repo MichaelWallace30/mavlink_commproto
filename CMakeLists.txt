@@ -13,10 +13,15 @@ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_uart_interface_example/mavlink/
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_uart_interface_example/)
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProto-MessageStandards2017/packets/cpp/)
 
+
 # Add the exe
 add_executable(mavlink_commproto
  ${CMAKE_CURRENT_SOURCE_DIR}/example.cpp
 )
+
+target_link_libraries(mavlink_commproto ${COMMPROTO_FINAL_STATIC})
+target_link_libraries(mavlink_commproto cryptopp-static)
+target_link_libraries(mavlink_commproto libxbee3)
 
  #Mario? this is probably not right
 if (CMAKE_VERSION VERSION_GREATER 2.8.11)  
@@ -32,5 +37,4 @@ set_property(TARGET mavlink_commproto PROPERTY CXX_STANDARD 11)
 #need help Mario?
 # Given that linux is different from windows
 #target_link_libraries(CommProtoXBee ${COMMPROTO_FINAL_STATIC})
-#target_link_libraries(CommProtoXBee cryptopp-static)
-#target_link_libraries(CommProtoXBee libxbee3)
+
