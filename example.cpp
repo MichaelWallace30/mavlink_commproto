@@ -35,128 +35,6 @@ using namespace ngcp;
 #include <sys/time.h>
 */
 
-//remove this calling if found just destruct heap data
-//make sure we clean up though
-//void quit_handler( int sig );
-
-//not using this either
-//parse_commandline(int argc, char **argv, char *&uart_name, int &baudrate);
-
-
-//@TODO need new function to handle each type of commands
-//commands(autopilot_interface);
-
-//@TODO need function which reads data from mavlink on intervals
-//???? look at commands example
-
-//@TODO need function to init serial connection for nuc to pixhawk
-
-//init uart function
-//some name
-/*
-	// --------------------------------------------------------------------------
-	//   PARSE THE COMMANDS
-	// --------------------------------------------------------------------------
-
-	// Default input arguments
-#ifdef __APPLE__
-	char *uart_name = (char*)"/dev/tty.usbmodem1";
-#else
-	char *uart_name = (char*)"/dev/ttyUSB0";
-#endif
-	int baudrate = 57600;
-
-    /////////////////////////////
-    //Need to redo
-    /////////////////////////////    
-	// do the parse, will throw an int if it fails
-	parse_commandline(argc, argv, uart_name, baudrate);
-
-
-	// --------------------------------------------------------------------------
-	//   PORT and THREAD STARTUP
-	// --------------------------------------------------------------------------
-
-	
-	  Instantiate a serial port object
-	 
-	  //This object handles the opening and closing of the offboard computer's
-	  //serial port over which it will communicate to an autopilot.  It has
-	  //methods to read and write a mavlink_message_t object.  To help with read
-	  //and write in the context of pthreading, it gaurds port operations with a
-	  //pthread mutex lock.
-	
-	 
-	Serial_Port serial_port(uart_name, baudrate);
-
-
-	
-      //Instantiate an autopilot interface object
-	 
-	  //This starts two threads for read and write over MAVlink. The read thread
-	  //listens for any MAVlink message and pushes it to the current_messages
-	  //attribute.  The write thread at the moment only streams a position target
-	  //in the local NED frame (mavlink_set_position_target_local_ned_t), which
-	  //is changed by using the method update_setpoint().  Sending these messages
-	  //are only half the requirement to get response from the autopilot, a signal
-	  //to enter "offboard_control" mode is sent by using the enable_offboard_control()
-	  //method.  Signal the exit of this mode with disable_offboard_control().  It's
-	  //important that one way or another this program signals offboard mode exit,
-	  //otherwise the vehicle will go into failsafe.
-	 
-	Autopilot_Interface autopilot_interface(&serial_port);
-
-	
-	  //Setup interrupt signal handler
-	 
-	  //Responds to early exits signaled with Ctrl-C.  The handler will command
-	  //to exit offboard mode if required, and close threads and the port.
-	  //The handler in this example needs references to the above objects.
-	 
-	 
-	serial_port_quit         = &serial_port;
-	autopilot_interface_quit = &autopilot_interface;
-	signal(SIGINT,quit_handler);
-
-	
-	  //Start the port and autopilot_interface
-	 // This is where the port is opened, and read and write threads are started.
-	 
-	serial_port.start();
-	autopilot_interface.start();
-
-
-	// --------------------------------------------------------------------------
-	//   RUN COMMANDS
-	// --------------------------------------------------------------------------
-
-	
-	//Now we can implement the algorithm we want on top of the autopilot interface
-	 
-	commands(autopilot_interface);
-
-
-	// --------------------------------------------------------------------------
-	//   THREAD and PORT SHUTDOWN
-	// --------------------------------------------------------------------------
-
-	
-	// Now that we are done we can stop the threads and close the port
-	 
-	autopilot_interface.stop();
-	serial_port.stop();
-
-
-	// --------------------------------------------------------------------------
-	//   DONE
-	// --------------------------------------------------------------------------
-
-	// woot!
-	return 0;
-
-}
-*/
-
 // ticks.
 typedef uint32_t tick_t;
 
@@ -169,40 +47,97 @@ inline void Tick() {
 }
 
 inline bool StillTicking() {
-  return tick <= tick_limit;//what in the retarnation
+  return tick <= tick_limit;//what in the retardation
 }
 
 
-error_t VehicleTelemetryCommandCallback(const comnet::Header& header, const VehicleTelemetryCommand& packet, comnet::Comms& node) {
+//uart_interface global class objects
+//putting it on the heap for now because I don't want default constructor to be called
+Serial_Port *serial_port;
+Autopilot_Interface *autopilot_interface;
 
-    //process new telemetry command
+
+error_t VehicleWaypointCommandCallback(const comnet::Header& header, const VehicleWaypointCommand & packet, comnet::Comms& node) {
+
+    //enable control
+    autopilot_interface->enable_offboard_control();
+	usleep(100);
+    printf("SEND OFFBOARD COMMANDS\n");
+    
+    mavlink_set_position_target_local_ned_t sp;
+    
+    //the x y z could be wrong?
+     set_position( packet.longitude, // [m] X
+               packet.latitude, // [m] Y
+               packet.altitude, // [m] Z
+               sp         );
+    //you can also set velocity and yaw look up more command if need be
+    
+    //apply changes    
+    autopilot_interface->update_setpoint(sp);
+    
+    //disable control
+    autopilot_interface->disable_offboard_control();
     
   return comnet::CALLBACK_SUCCESS | comnet::CALLBACK_DESTROY_PACKET;
 }
 
 
-//@TODO make main loop such as xbee_test.cc example code
+
 int main()
 {
+
+  //CommProtocol
   Comms uav(2);
   uav.LoadKey("NGCP PROJECT 2016");
-
-  // Configure these!
+  // Configure these! port of xbee FTDI dongle and MAC address of Xbee
   uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
   uav.AddAddress(1, "address");
-
+  
+  //c_uart_interface  port of FTDI/Serial which goes to pixhawk  
+  
+  serial_port = new Serial_Port("/dev/ttyUSB0", 57600);
+  //create autopilot class with serial connection
+  autopilot_interface = new Autopilot_Interface(&serial_port);
+  
+  
 
   uav.Run();
 
   // Replace nullptr Callbacks!!
-  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new comnet::Callback((comnet::callback_t)VehicleTelemetryCommandCallback));
+  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new Callback(nullptr));
   uav.LinkCallback(new ngcp::VehicleTerminationCommand(), new Callback(nullptr));
-  uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new Callback(nullptr));
+  uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new comnet::Callback((comnet::callback_t)VehicleWaypointCommandCallback));
 
   while (StillTicking()) {    
+    // copy current messages
+	Mavlink_Messages messages = api.current_messages;
+    
+    //@TODO this need to be changed to send this data
+    // local position in ned frame
+	mavlink_local_position_ned_t pos = messages.local_position_ned;
+	printf("Got message LOCAL_POSITION_NED (spec: https://pixhawk.ethz.ch/mavlink/#LOCAL_POSITION_NED)\n");
+	printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
+
+	// hires imu
+	mavlink_highres_imu_t imu = messages.highres_imu;
+	printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
+	printf("    ap time:     %llu \n", imu.time_usec);
+	printf("    acc  (NED):  % f % f % f (m/s^2)\n", imu.xacc , imu.yacc , imu.zacc );
+	printf("    gyro (NED):  % f % f % f (rad/s)\n", imu.xgyro, imu.ygyro, imu.zgyro);
+	printf("    mag  (NED):  % f % f % f (Ga)\n"   , imu.xmag , imu.ymag , imu.zmag );
+	printf("    baro:        %f (mBar) \n"  , imu.abs_pressure);
+	printf("    altitude:    %f (m) \n"     , imu.pressure_alt);
+	printf("    temperature: %f C \n"       , imu.temperature );
+    
+    
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     Tick();
   }
 
+  autopilot_interface->stop();
+  serial_port->stop();
+  delete autopilot_interfacev
+  delete serial_port;
   uav.Stop();
 }
