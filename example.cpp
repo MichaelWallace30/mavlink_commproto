@@ -90,9 +90,17 @@ int main()
   //CommProtocol
   Comms uav(2);
   uav.LoadKey("NGCP PROJECT 2016");
+  
+  
+  //xbee mode
   // Configure these! port of xbee FTDI dongle and MAC address of Xbee
-  uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
-  uav.AddAddress(1, "address");
+  //uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
+  //uav.AddAddress(1, "address");
+  
+  //udp mode for lcoal testing
+  uav.InitConnection(UDP_LINK, "1338", "127.0.0.1")
+  uav.AddAddress(1, "127.0.0.1", 1337)
+  
   
   //c_uart_interface  port of FTDI/Serial which goes to pixhawk  
   
