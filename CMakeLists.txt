@@ -19,7 +19,7 @@ add_executable(mavlink_commproto
  ${CMAKE_CURRENT_SOURCE_DIR}/example.cpp
 )
 
-target_link_libraries(mavlink_commproto ${COMMPROTO_FINAL_STATIC})
+target_link_libraries(mavlink_commproto CommProtocol-Static)
 target_link_libraries(mavlink_commproto cryptopp-static)
 target_link_libraries(mavlink_commproto libxbee3)
 

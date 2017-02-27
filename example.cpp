@@ -12,6 +12,7 @@ using namespace comnet;
 
 // Dont' know what packet to include? Include them all!!
 #include <Packets.hpp>
+using namespace ngcp;
 
 //@TODO make call backs for these commands
 
