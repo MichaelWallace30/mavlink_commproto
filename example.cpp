@@ -195,7 +195,7 @@ int main()
   uav.Run();
 
   // Replace nullptr Callbacks!!
-  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new comnet::Callback((comnet::callback_t)VehicleTelemetryCommandCallback);
+  uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new comnet::Callback((comnet::callback_t)VehicleTelemetryCommandCallback));
   uav.LinkCallback(new ngcp::VehicleTerminationCommand(), new Callback(nullptr));
   uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new Callback(nullptr));
 
