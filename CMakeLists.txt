@@ -9,14 +9,15 @@ project(mavlink_commproto)
 add_subdirectory(CommProtocol/)
 
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProtocol/CommProto/include/)
-include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_uart_interface_example/mavlink/include/mavlink/v1.0/)
-include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_uart_interface_example/)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/mavlink/include/mavlink/v1.0/)
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProto-MessageStandards2017/packets/cpp/)
 
 
 # Add the exe
 add_executable(mavlink_commproto
  ${CMAKE_CURRENT_SOURCE_DIR}/example.cpp
+ autopilot_interface.cpp
+ serial_port.cpp
 )
 
 target_link_libraries(mavlink_commproto CommProtocol-Static)
