@@ -25,13 +25,13 @@ int main()
   
   //udp mode for lcoal testing
   test.InitConnection(UDP_LINK, "1338", "127.0.0.1");
-  test.AddAddress(1, "127.0.0.1", 1337);
+  test.AddAddress(2, "127.0.0.1", 1337);
   
 
   test.Run();
   //VehicleWaypointCommand(uint16_t vehicle_id = 0,float latitude = 0,float longitude = 0,float altitude = 0) 
   VehicleWaypointCommand vwpc(2,1,2,3);
-  test.Send(bing, 2);
+  test.Send(vwpc, 2);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   
   test.Stop();

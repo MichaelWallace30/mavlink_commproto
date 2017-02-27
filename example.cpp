@@ -39,7 +39,7 @@ using namespace ngcp;
 typedef uint32_t tick_t;
 
 tick_t tick = 0;
-tick_t tick_limit = 50;
+tick_t tick_limit = 500;
 
 inline void Tick() {
   tick++;
@@ -67,8 +67,8 @@ error_t VehicleWaypointCommandCallback(const comnet::Header& header, const Vehic
     mavlink_set_position_target_local_ned_t sp;
     
     //the x y z could be wrong?
-     set_position( packet.longitude, // [m] X
-               packet.latitude, // [m] Y
+     set_position( 100, // [m] X
+               100, // [m] Y
                packet.altitude, // [m] Z
                sp         );
     //you can also set velocity and yaw look up more command if need be
@@ -98,16 +98,17 @@ int main()
   //uav.AddAddress(1, "address");
   
   //udp mode for lcoal testing
-  uav.InitConnection(UDP_LINK, "1338", "127.0.0.1");
-  uav.AddAddress(1, "127.0.0.1", 1337);
+  uav.InitConnection(UDP_LINK, "1337", "127.0.0.1");
+  uav.AddAddress(1, "127.0.0.1", 1338);
   
   
   //c_uart_interface  port of FTDI/Serial which goes to pixhawk  
   
-  serial_port = new Serial_Port("/dev/ttyUSB0", 57600);
+  serial_port = new Serial_Port("/dev/ttyACM0", 57600);
   //create autopilot class with serial connection
   autopilot_interface = new Autopilot_Interface(serial_port);
-  
+  serial_port->start();
+  autopilot_interface->start();
   
 
   uav.Run();
@@ -123,23 +124,23 @@ int main()
     
     //@TODO this need to be changed to send this data
     // local position in ned frame
-	mavlink_local_position_ned_t pos = messages.local_position_ned;
-	printf("Got message LOCAL_POSITION_NED (spec: https://pixhawk.ethz.ch/mavlink/#LOCAL_POSITION_NED)\n");
+	mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;
+	
 	printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
 
 	// hires imu
-	mavlink_highres_imu_t imu = messages.highres_imu;
-	printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
-	printf("    ap time:     %llu \n", imu.time_usec);
-	printf("    acc  (NED):  % f % f % f (m/s^2)\n", imu.xacc , imu.yacc , imu.zacc );
-	printf("    gyro (NED):  % f % f % f (rad/s)\n", imu.xgyro, imu.ygyro, imu.zgyro);
-	printf("    mag  (NED):  % f % f % f (Ga)\n"   , imu.xmag , imu.ymag , imu.zmag );
-	printf("    baro:        %f (mBar) \n"  , imu.abs_pressure);
-	printf("    altitude:    %f (m) \n"     , imu.pressure_alt);
-	printf("    temperature: %f C \n"       , imu.temperature );
+	//mavlink_highres_imu_t imu = messages.highres_imu;
+	//printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
+	//printf("    ap time:     %llu \n", imu.time_usec);
+	//printf("    acc  (NED):  % f % f % f (m/s^2)\n", imu.xacc , imu.yacc , imu.zacc );
+	//printf("    gyro (NED):  % f % f % f (rad/s)\n", imu.xgyro, imu.ygyro, imu.zgyro);
+	//printf("    mag  (NED):  % f % f % f (Ga)\n"   , imu.xmag , imu.ymag , imu.zmag );
+	//printf("    baro:        %f (mBar) \n"  , imu.abs_pressure);
+	//printf("    altitude:    %f (m) \n"     , imu.pressure_alt);
+	//printf("    temperature: %f C \n"       , imu.temperature );
     
     
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     Tick();
   }
 
