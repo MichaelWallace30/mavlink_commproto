@@ -4,3 +4,6 @@
 [submodule "CommProto-MessageStandards2017"]
 	path = CommProto-MessageStandards2017
 	url = https://github.com/NGCP/CommProto-MessageStandards2017
+[submodule "c_library"]
+	path = c_library
+	url = git://github.com/mavlink/c_library.git
