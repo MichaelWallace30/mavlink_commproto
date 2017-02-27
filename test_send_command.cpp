@@ -24,8 +24,8 @@ int main()
   //test.AddAddress(1, "address");
   
   //udp mode for lcoal testing
-  test.InitConnection(UDP_LINK, "1338", "127.0.0.1")
-  test.AddAddress(1, "127.0.0.1", 1337)
+  test.InitConnection(UDP_LINK, "1338", "127.0.0.1");
+  test.AddAddress(1, "127.0.0.1", 1337);
   
 
   test.Run();

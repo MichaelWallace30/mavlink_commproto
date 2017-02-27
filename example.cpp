@@ -98,8 +98,8 @@ int main()
   //uav.AddAddress(1, "address");
   
   //udp mode for lcoal testing
-  uav.InitConnection(UDP_LINK, "1338", "127.0.0.1")
-  uav.AddAddress(1, "127.0.0.1", 1337)
+  uav.InitConnection(UDP_LINK, "1338", "127.0.0.1");
+  uav.AddAddress(1, "127.0.0.1", 1337);
   
   
   //c_uart_interface  port of FTDI/Serial which goes to pixhawk  
