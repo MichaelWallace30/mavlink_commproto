@@ -106,7 +106,7 @@ int main()
   
   serial_port = new Serial_Port("/dev/ttyUSB0", 57600);
   //create autopilot class with serial connection
-  autopilot_interface = new Autopilot_Interface(&serial_port);
+  autopilot_interface = new Autopilot_Interface(serial_port);
   
   
 
@@ -119,7 +119,7 @@ int main()
 
   while (StillTicking()) {    
     // copy current messages
-	Mavlink_Messages messages = api.current_messages;
+	Mavlink_Messages messages = autopilot_interface->current_messages;
     
     //@TODO this need to be changed to send this data
     // local position in ned frame
@@ -145,7 +145,7 @@ int main()
 
   autopilot_interface->stop();
   serial_port->stop();
-  delete autopilot_interfacev
+  delete autopilot_interface;
   delete serial_port;
   uav.Stop();
 }
