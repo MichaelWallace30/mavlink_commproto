@@ -9,7 +9,7 @@ project(mavlink_commproto)
 add_subdirectory(CommProtocol/)
 
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProtocol/CommProto/include/)
-include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/mavlink/include/mavlink/v1.0/)
+include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_library)
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProto-MessageStandards2017/packets/cpp/)
 
 
