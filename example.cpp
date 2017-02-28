@@ -57,7 +57,11 @@ bool doneFlying = false;//needs mutex
 bool gcsControl = false;//needs mutex
 bool alreadyInControl = false;//used to prevent turn control on reptivily
 bool updateNewControlPosition = false;//on change position if new position recv
+CommMutex coordMutex;
 double xLongitude, yLatitude, zAltitude;//meeds mutex :(
+
+
+CommThread gcs_thread;
 
 
 /**
@@ -88,6 +92,50 @@ Autopilot_Interface *autopilot_interface;
 
 void gcsControlThread()
 {
+    // GCS can keep track of the vehicle's information state.
+    // DO NOT MODIFY OUTSIDE THE CALLACK.
+    VehicleInertialState info_state;
+    Comms gcs(1);
+    gcs.InitConnection(UDP_LINK, "1338", "127.0.0.1");
+    
+    // Connect to UAV.
+    gcs.AddAddress(2, "127.0.0.1", 1337);
+
+    // Unless we are expecting packets in return, GCS does not need to link any packet callbacks.
+    // This can be removed if not needed.
+    gcs.LinkCallback(new VehicleInertialState(), 
+      new Callback([&] (const Header &header, ABSPacket &packet, CommNode &node) -> error_t 
+    {
+      std::cout << "GCS retrieval.\n";
+      VehicleInertialState &recv = ABSPacket::GetValue<VehicleInertialState>(packet);
+      info_state.longitude = recv.longitude;
+      info_state.latitude = recv.latitude;
+      info_state.altitude = recv.altitude;
+      info_state.east_accel = recv.east_accel;
+      info_state.east_speed = recv.east_speed;
+      info_state.heading = recv.heading;
+      info_state.pitch = recv.pitch;
+      info_state.pitch_rate = recv.pitch_rate;
+      info_state.roll = recv.roll;
+      info_state.roll_rate = recv.roll_rate;
+      info_state.vertical_accel = recv.vertical_accel;
+      info_state.vertical_speed = recv.vertical_speed;
+      std::cout << "Information retrieved.\n";
+
+      // UAV IS FLYING TO HIGH
+      if (recv.altitude >= 10000.0f) {
+        VehicleModeCommand command;
+        // Request to take control!
+        command.vehicle_mode = 1;
+        command.vehicle_id = 1;
+        node.Send(command, 2); 
+      }
+
+      return CALLBACK_SUCCESS | CALLBACK_DESTROY_PACKET;
+    }));
+
+    gcs.Run();
+
     while(!doneFlying)//loop until program is done
     {
         
@@ -145,7 +193,8 @@ void gcsControlThread()
 
 error_t VehicleModeCommandCallback(const comnet::Header& header, const VehicleModeCommand & packet, comnet::Comms& node) {
 
-  gcsControl = packet.vehicle_mode;//0 for autonomous
+  TakeControl(packet.vehicle_mode); // 0 for autonomous. Maybe enum is better?
+  //gcsControl = packet.vehicle_mode;//0 for autonomous
   printf("CommandMode: %d\n", gcsControl);
   return comnet::CALLBACK_SUCCESS;    
 }
@@ -164,6 +213,8 @@ error_t VehicleWaypointCommandCallback(const comnet::Header& header, const Vehic
 
 int main()
 {
+  // break off for GCS Simulation.
+  gcs_thread = CommThread(gcsControlThread);
 
   //CommProtocol
   Comms uav(2);
@@ -226,4 +277,6 @@ int main()
   delete autopilot_interface;
   delete serial_port;
   uav.Stop();
+
+  gcs_thread.Join();
 }
