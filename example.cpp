@@ -51,11 +51,34 @@ inline bool StillTicking() {
 }
 
 
+CommMutex flyingMutex;
+CommMutex controlMutex;
 bool doneFlying = false;//needs mutex
 bool gcsControl = false;//needs mutex
 bool alreadyInControl = false;//used to prevent turn control on reptivily
 bool updateNewControlPosition = false;//on change position if new position recv
 double xLongitude, yLatitude, zAltitude;//meeds mutex :(
+
+
+/**
+   Enable Control for GCS.
+*/
+void TakeControl(bool enable) 
+{
+  CommLock lock(controlMutex);
+  gcsControl = enable;
+  // Dunno what this would be for.
+  alreadyInControl = gcsControl;
+}
+
+
+/**
+   Finish flying.
+*/
+void FinishFlying(bool enable) {
+  CommLock lock(flyingMutex);
+  doneFlying = enable;
+}
 
 
 //uart_interface global class objects
