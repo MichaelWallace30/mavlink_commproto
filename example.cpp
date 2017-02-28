@@ -51,34 +51,89 @@ inline bool StillTicking() {
 }
 
 
+bool doneFlying = false;//needs mutex
+bool gcsControl = false;//needs mutex
+bool alreadyInControl = false;//used to prevent turn control on reptivily
+bool updateNewControlPosition = false;//on change position if new position recv
+double xLongitude, yLatitude, zAltitude;//meeds mutex :(
+
+
 //uart_interface global class objects
 //putting it on the heap for now because I don't want default constructor to be called
 Serial_Port *serial_port;
 Autopilot_Interface *autopilot_interface;
 
+void gcsControlThread()
+{
+    while(!doneFlying)//loop until program is done
+    {
+        
+        if(gcsControl)//just switch control on or off depending on gcsControl boolean
+        {
+            if(!alreadyInControl)//enable control
+            {
+                printf("SEND OFFBOARD COMMANDS\n");
+                autopilot_interface->enable_offboard_control();
+                alreadyInControl = true;
+                usleep(100);
+            }
+            
+            if(updateNewControlPosition){
+                mavlink_set_position_target_local_ned_t sp;
+    
+                //the x y z could be wrong?
+                set_position(xLongitude, // [m] X
+                        yLatitude, // [m] Y
+                        zAltitude, // [m] Z
+                        sp         );
+                //you can also set velocity and yaw look up more command if need be
+                
+                //apply changes    
+                autopilot_interface->update_setpoint(sp);
+            }
+        }
+        else
+        {
+            //are we in control?
+            if(alreadyInControl){
+                //disable control
+                alreadyInControl = false;
+                autopilot_interface->disable_offboard_control();
+            }
+        }//end switch control mode
+        
+        //check if dest found and turn of control
+        //truncating to int for accuracy reduction
+        //might have to increase tollerance for fixed wing planes
+        if(gcsControl){
+            mavlink_local_position_ned_t pos;
+            pos = autopilot_interface->current_messages.local_position_ned;	
+            if(gcsControl && ( ((int)(pos.x) != (int)(xLongitude)) && 
+                                ((int)(pos.y) != (int)(yLatitude)) && 
+                                ((int)(pos.z) != ((int)(zAltitude))))){
+                gcsControl = false;
+                
+            }
+        }
+            
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+
+error_t VehicleModeCommandCallback(const comnet::Header& header, const VehicleModeCommand & packet, comnet::Comms& node) {
+
+  gcsControl = packet.vehicle_mode;//0 for autonomous
+  printf("CommandMode: %d\n", gcsControl);
+  return comnet::CALLBACK_SUCCESS;    
+}
 
 error_t VehicleWaypointCommandCallback(const comnet::Header& header, const VehicleWaypointCommand & packet, comnet::Comms& node) {
 
-    //enable control
-    autopilot_interface->enable_offboard_control();
-	usleep(100);
-    printf("SEND OFFBOARD COMMANDS\n");
+    xLongitude = packet.longitude; // [m] X
+    yLatitude = packet.latitude; // [m] Y
+    zAltitude = packet.altitude;// [m] Z
     
-    mavlink_set_position_target_local_ned_t sp;
-    
-    //the x y z could be wrong?
-     set_position( 100, // [m] X
-               100, // [m] Y
-               packet.altitude, // [m] Z
-               sp         );
-    //you can also set velocity and yaw look up more command if need be
-    
-    //apply changes    
-    autopilot_interface->update_setpoint(sp);
-    
-    //disable control
-    autopilot_interface->disable_offboard_control();
-    
+    printf("New Position Recv: %f %f %f\n", packet.longitude, packet.latitude, packet.altitude);
   return comnet::CALLBACK_SUCCESS | comnet::CALLBACK_DESTROY_PACKET;
 }
 
@@ -101,15 +156,12 @@ int main()
   uav.InitConnection(UDP_LINK, "1337", "127.0.0.1");
   uav.AddAddress(1, "127.0.0.1", 1338);
   
-  
-  //c_uart_interface  port of FTDI/Serial which goes to pixhawk  
-  
+  //c_uart_interface  port of FTDI/Serial which goes to pixhawk    
   serial_port = new Serial_Port("/dev/ttyACM0", 57600);
   //create autopilot class with serial connection
   autopilot_interface = new Autopilot_Interface(serial_port);
   serial_port->start();
   autopilot_interface->start();
-  
 
   uav.Run();
 
@@ -117,6 +169,8 @@ int main()
   uav.LinkCallback(new ngcp::VehicleTelemetryCommand(),   new Callback(nullptr));
   uav.LinkCallback(new ngcp::VehicleTerminationCommand(), new Callback(nullptr));
   uav.LinkCallback(new ngcp::VehicleWaypointCommand(),    new comnet::Callback((comnet::callback_t)VehicleWaypointCommandCallback));
+  uav.LinkCallback(new ngcp::VehicleModeCommand(),    new comnet::Callback((comnet::callback_t)VehicleModeCommandCallback));
+  
 
   while (StillTicking()) {    
     // copy current messages
@@ -126,7 +180,7 @@ int main()
     // local position in ned frame
 	mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;
 	
-	printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
+	//printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
 
 	// hires imu
 	//mavlink_highres_imu_t imu = messages.highres_imu;

@@ -8,7 +8,8 @@ using namespace ngcp;
 
 
 
-
+#include <iostream>
+using namespace std;
 
 int main()
 {
@@ -30,8 +31,17 @@ int main()
 
   test.Run();
   //VehicleWaypointCommand(uint16_t vehicle_id = 0,float latitude = 0,float longitude = 0,float altitude = 0) 
-  VehicleWaypointCommand vwpc(2,1,2,3);
-  test.Send(vwpc, 2);
+  printf("0 to send waypoint or 1 to send command mode stop: ");
+  int choice;
+  cin >> choice;
+  if(choice == 0){
+    VehicleWaypointCommand vwpc(2,1,2,3);
+    test.Send(vwpc, 2);
+  }else
+  {
+      VehicleModeCommand vmc(2,0);
+      test.Send(vmc,2);
+  }
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   
   test.Stop();
