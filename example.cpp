@@ -200,7 +200,7 @@ int main()
 	Mavlink_Messages messages = autopilot_interface->current_messages;
 	mavlink_battery_status_t my_battery_status = messages.battery_status;
 	
-	//Battery myBatteryStatus(messages)
+	Battery myBatteryStatus(my_battery_status.battery_remaining);// 0 is 0%: 100 is 100%
 	
     //@TODO this need to be changed to send this data to GCS (1)
 	/*				AVAILBLE DATA INSIDE current_messages
