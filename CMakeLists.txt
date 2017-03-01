@@ -7,6 +7,7 @@ project(mavlink_commproto)
 # Build the library with this application, otherwise we would need to make the 
 # library for them...
 add_subdirectory(CommProtocol/)
+add_subdirectory(test_send/)
 
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProtocol/CommProto/include/)
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/c_library)

@@ -6,10 +6,10 @@ project(mavlink_commproto_send)
 
 # Build the library with this application, otherwise we would need to make the 
 # library for them...
-add_subdirectory(CommProtocol/)
+#add_subdirectory(CommProtocol/)
 
-include_directories(${CMAKE_SOURCE_DIR}/CommProtocol/CommProto/include/)
-include_directories(${CMAKE_SOURCE_DIR}/CommProto-MessageStandards2017/packets/cpp/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../CommProtocol/CommProto/include/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../CommProto-MessageStandards2017/packets/cpp/)
 
 
 # Add the exe
