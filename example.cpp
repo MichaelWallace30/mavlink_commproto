@@ -14,26 +14,9 @@ using namespace comnet;
 #include <Packets.hpp>
 using namespace ngcp;
 
-//@TODO make call backs for these commands
-
 //uart interface
 #include "autopilot_interface.h"
 #include "serial_port.h"
-
-//probably redundant only add if needs be for uart interface code
-/*
-#include <iostream>
-#include <stdio.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <cmath>
-#include <string.h>
-#include <inttypes.h>
-#include <fstream>
-#include <signal.h>
-#include <time.h>
-#include <sys/time.h>
-*/
 
 // ticks.
 typedef uint32_t tick_t;
@@ -53,9 +36,9 @@ inline bool StillTicking() {
 
 CommMutex flyingMutex;
 CommMutex controlMutex;
-bool doneFlying = false;//needs mutex
-bool gcsControl = false;//needs mutex
-bool alreadyInControl = false;//used to prevent turn control on reptivily
+bool doneFlying = false;
+bool under_gcsControl = false;
+bool onboard_control_active = false;//used to prevent turn control on reptivily
 bool updateNewControlPosition = false;//on change position if new position recv
 CommMutex coordMutex;
 double xLongitude, yLatitude, zAltitude;//meeds mutex :(
@@ -70,9 +53,7 @@ CommThread gcs_thread;
 void TakeControl(bool enable) 
 {
   CommLock lock(controlMutex);
-  gcsControl = enable;
-  // Dunno what this would be for.
-  alreadyInControl = gcsControl;
+  under_gcsControl = enable;
 }
 
 
@@ -92,60 +73,17 @@ Autopilot_Interface *autopilot_interface;
 
 void gcsControlThread()
 {
-    // GCS can keep track of the vehicle's information state.
-    // DO NOT MODIFY OUTSIDE THE CALLACK.
-    VehicleInertialState info_state;
-    Comms gcs(1);
-    gcs.InitConnection(UDP_LINK, "1338", "127.0.0.1");
-    
-    // Connect to UAV.
-    gcs.AddAddress(2, "127.0.0.1", 1337);
-
-    // Unless we are expecting packets in return, GCS does not need to link any packet callbacks.
-    // This can be removed if not needed.
-    gcs.LinkCallback(new VehicleInertialState(), 
-      new Callback([&] (const Header &header, ABSPacket &packet, CommNode &node) -> error_t 
-    {
-      std::cout << "GCS retrieval.\n";
-      VehicleInertialState &recv = ABSPacket::GetValue<VehicleInertialState>(packet);
-      info_state.longitude = recv.longitude;
-      info_state.latitude = recv.latitude;
-      info_state.altitude = recv.altitude;
-      info_state.east_accel = recv.east_accel;
-      info_state.east_speed = recv.east_speed;
-      info_state.heading = recv.heading;
-      info_state.pitch = recv.pitch;
-      info_state.pitch_rate = recv.pitch_rate;
-      info_state.roll = recv.roll;
-      info_state.roll_rate = recv.roll_rate;
-      info_state.vertical_accel = recv.vertical_accel;
-      info_state.vertical_speed = recv.vertical_speed;
-      std::cout << "Information retrieved.\n";
-
-      // UAV IS FLYING TO HIGH
-      if (recv.altitude >= 10000.0f) {
-        VehicleModeCommand command;
-        // Request to take control!
-        command.vehicle_mode = 1;
-        command.vehicle_id = 1;
-        node.Send(command, 2); 
-      }
-
-      return CALLBACK_SUCCESS | CALLBACK_DESTROY_PACKET;
-    }));
-
-    gcs.Run();
 
     while(!doneFlying)//loop until program is done
     {
         
-        if(gcsControl)//just switch control on or off depending on gcsControl boolean
+        if(under_gcsControl)//just switch control on or off depending on gcsControl boolean
         {
-            if(!alreadyInControl)//enable control
+            if(!onboard_control_active)//enable control
             {
                 printf("SEND OFFBOARD COMMANDS\n");
                 autopilot_interface->enable_offboard_control();
-                alreadyInControl = true;
+                onboard_control_active = true;
                 usleep(100);
             }
             
@@ -166,9 +104,9 @@ void gcsControlThread()
         else
         {
             //are we in control?
-            if(alreadyInControl){
+            if(onboard_control_active){
                 //disable control
-                alreadyInControl = false;
+                onboard_control_active = false;
                 autopilot_interface->disable_offboard_control();
             }
         }//end switch control mode
@@ -176,13 +114,13 @@ void gcsControlThread()
         //check if dest found and turn of control
         //truncating to int for accuracy reduction
         //might have to increase tollerance for fixed wing planes
-        if(gcsControl){
+        if(under_gcsControl){
             mavlink_local_position_ned_t pos;
             pos = autopilot_interface->current_messages.local_position_ned;	
-            if(gcsControl && ( ((int)(pos.x) != (int)(xLongitude)) && 
+            if(under_gcsControl && ( ((int)(pos.x) != (int)(xLongitude)) && 
                                 ((int)(pos.y) != (int)(yLatitude)) && 
                                 ((int)(pos.z) != ((int)(zAltitude))))){
-                gcsControl = false;
+                under_gcsControl = false;
                 
             }
         }
@@ -195,7 +133,7 @@ error_t VehicleModeCommandCallback(const comnet::Header& header, const VehicleMo
 
   TakeControl(packet.vehicle_mode); // 0 for autonomous. Maybe enum is better?
   //gcsControl = packet.vehicle_mode;//0 for autonomous
-  printf("CommandMode: %d\n", gcsControl);
+  printf("CommandMode: %d\n", under_gcsControl);
   return comnet::CALLBACK_SUCCESS;    
 }
 
@@ -214,7 +152,7 @@ error_t VehicleWaypointCommandCallback(const comnet::Header& header, const Vehic
 int main()
 {
   // break off for GCS Simulation.
-  gcs_thread = CommThread(gcsControlThread);
+  gcs_control_thread = CommThread(gcsControlThread);
 
   //CommProtocol
   Comms uav(2);
@@ -250,10 +188,13 @@ int main()
     // copy current messages
 	Mavlink_Messages messages = autopilot_interface->current_messages;
     
-    //@TODO this need to be changed to send this data
+    //@TODO this need to be changed to send this data to GCS (1)
     // local position in ned frame
 	mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;
 	
+        
+        
+        
 	//printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
 
 	// hires imu
@@ -278,5 +219,7 @@ int main()
   delete serial_port;
   uav.Stop();
 
-  gcs_thread.Join();
+  TakeControl(false);
+  FinishFlying(true);  
+  gcs_contorl_thread.Join();
 }
