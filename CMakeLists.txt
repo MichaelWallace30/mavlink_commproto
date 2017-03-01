@@ -18,6 +18,8 @@ include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/CommProto-MessageStandards2017/pa
 add_executable(mavlink_commproto
  ${CMAKE_CURRENT_SOURCE_DIR}/example.cpp
  autopilot_interface.cpp
+ autopilot_interface.h
+ serial_port.h
  serial_port.cpp
 )
 

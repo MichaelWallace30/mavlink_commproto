@@ -9,6 +9,12 @@ using namespace comnet;
 #include <VehicleTelemetryCommand.hpp>
 #include <VehicleTerminationCommand.hpp>
 #include <VehicleWaypointCommand.hpp>
+#include <VehicleAttitude.hpp>
+#include <VehicleBodySensedState.hpp>
+#include <VehicleGlobalPosition.hpp>
+#include <VehicleIdentification.hpp>
+#include <VehicleTelemetryCommand.hpp>
+#include <VehicleTerminationCommand.hpp>
 
 // Dont' know what packet to include? Include them all!!
 #include <Packets.hpp>
@@ -203,12 +209,44 @@ int main()
 	// local position in ned frame
 	Mavlink_Messages messages = autopilot_interface->current_messages;
         
-        
         //get and send battery
 	Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
-        uav.Send(myBatteryStatus, GCS_NODE_ID);
-        
+  uav.Send(myBatteryStatus, GCS_NODE_ID);
+  
+  //  TODO(): This may be wrong.
+  VehicleSystemStatus my_systemStatus;
+  my_systemStatus.vehicle_id = uav.GetUniqueId(); // system id...
+  my_systemStatus.vehicle_mode = under_gcsControl; // vehicle mode.
+  my_systemStatus.vehicle_state = messages.sys_status.onboard_control_sensors_present; // I'm going to assume that is what vehicle state is...
+  uav.Send(my_systemStatus, GCS_NODE_ID);
+
+  VehicleGlobalPosition my_globalPosition(
+    uav.GetUniqueId(), 
+    messages.global_position_int.lon, 
+    messages.global_position_int.lat, 
+    messages.global_position_int.alt, 
+    messages.global_position_int.vx,
+    messages.global_position_int.vy,
+    messages.global_position_int.vz
+  );
+  uav.Send(my_globalPosition, GCS_NODE_ID);
+
+  VehicleAttitude my_attitude(
+    uav.GetUniqueId(),
+    messages.attitude.roll,
+    messages.attitude.pitch,
+    messages.attitude.yaw
+  );
+  uav.Send(my_attitude, GCS_NODE_ID);
+
+  VehicleIdentification my_identification(
+    uav.GetUniqueId(),
+    0xFF // something 8-bit that needs to identify vehicle types.
+  );
+  // not sending.
+
         //how does this differ from global position?
+        // Ans: I'm guessing position relative to something, maybe the displacement between this vehicle and gcs.
         //messages.local_position_ned.x;
         //messages.local_position_ned.y;
         //messages.local_position_ned.z;
@@ -219,30 +257,34 @@ int main()
         
         //@TODO this need to be changed to send this data to GCS (1)
 	/*				AVAILBLE DATA INSIDE current_messages
+
+                                                                          [X] Marks that we have implemented the send for it.
+                                                                          [R] Marks that this packet is not found and required in the Default Packets folder.
+                                                                          [U] Marks that this packet is unknown whether we need to send.
 	int sysid;
 	int compid;
 	// Heartbeat
-	mavlink_heartbeat_t heartbeat;
+	mavlink_heartbeat_t heartbeat;                                          [R]
 	// System Status
-	mavlink_sys_status_t sys_status;
+	mavlink_sys_status_t sys_status;                                        [X]
 	// Battery Status
-	mavlink_battery_status_t battery_status;
+	mavlink_battery_status_t battery_status;                                [X]
 	// Radio Status
-	mavlink_radio_status_t radio_status;
+	mavlink_radio_status_t radio_status;                                    [R]
 	// Local Position
-	mavlink_local_position_ned_t local_position_ned;
+	mavlink_local_position_ned_t local_position_ned;                        [R]
 	// Global Position
-	mavlink_global_position_int_t global_position_int;
+	mavlink_global_position_int_t global_position_int;                      [x]
 	// Local Position Target
-	mavlink_position_target_local_ned_t position_target_local_ned;
+	mavlink_position_target_local_ned_t position_target_local_ned;          [R]
 	// Global Position Target
-	mavlink_position_target_global_int_t position_target_global_int;
+	mavlink_position_target_global_int_t position_target_global_int;        
 	// HiRes IMU
-	mavlink_highres_imu_t highres_imu;
+	mavlink_highres_imu_t highres_imu;                                      [R]
 	// Attitude
-	mavlink_attitude_t attitude;
+	mavlink_attitude_t attitude;                                            [X]
 	// Time Stamps
-	Time_Stamps time_stamps;
+	Time_Stamps time_stamps;                                                [U]
 	*/
 	
 	//mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned; 	
