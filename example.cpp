@@ -69,8 +69,8 @@ void FinishFlying(bool enable) {
   waypoint has changed update
 */
 void UpdatedControl(bool enable){
-	CommLock lock(updateNewControlPosition);
-	updateControlMutex = enable;
+	CommLock lock(updateControlMutex);
+	updateNewControlPosition = enable;
 }
 
 //uart_interface global class objects
@@ -194,13 +194,43 @@ int main()
   
 
   while (StillTicking()) {    
-    // copy current messages
+        
+		
+	// local position in ned frame
+	Mavlink_Messages messages = autopilot_interface->current_messages;
+	mavlink_battery_status_t my_battery_status = messages.battery_status;
 	
-    
+	//Battery myBatteryStatus(messages)
+	
     //@TODO this need to be changed to send this data to GCS (1)
-    // local position in ned frame
-	//Mavlink_Messages messages = autopilot_interface->current_messages;
-	//mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;        
+	/*				AVAILBLE DATA INSIDE current_messages
+	int sysid;
+	int compid;
+	// Heartbeat
+	mavlink_heartbeat_t heartbeat;
+	// System Status
+	mavlink_sys_status_t sys_status;
+	// Battery Status
+	mavlink_battery_status_t battery_status;
+	// Radio Status
+	mavlink_radio_status_t radio_status;
+	// Local Position
+	mavlink_local_position_ned_t local_position_ned;
+	// Global Position
+	mavlink_global_position_int_t global_position_int;
+	// Local Position Target
+	mavlink_position_target_local_ned_t position_target_local_ned;
+	// Global Position Target
+	mavlink_position_target_global_int_t position_target_global_int;
+	// HiRes IMU
+	mavlink_highres_imu_t highres_imu;
+	// Attitude
+	mavlink_attitude_t attitude;
+	// Time Stamps
+	Time_Stamps time_stamps;
+	*/
+	
+	//mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned; 	
 	//printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
 	// hires imu
 	//mavlink_highres_imu_t imu = messages.highres_imu;
@@ -213,6 +243,8 @@ int main()
 	//printf("    altitude:    %f (m) \n"     , imu.pressure_alt);
 	//printf("    temperature: %f C \n"       , imu.temperature );
     
+	
+	
     
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     Tick();
@@ -227,7 +259,6 @@ int main()
   TakeControl(false);
   FinishFlying(true);  
   usleep(200);
-  if(gcs_control_thread.joinable()){
-	gcs_control_thread.Join();
-  }
+  gcs_control_thread.Join();
+  
 }
