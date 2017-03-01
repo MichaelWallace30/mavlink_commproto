@@ -36,26 +36,27 @@ inline bool StillTicking() {
 
 CommMutex flyingMutex;
 CommMutex controlMutex;
+CommMutex updateControlMutex;
+
 bool doneFlying = false;
 bool under_gcsControl = false;
 bool onboard_control_active = false;//used to prevent turn control on reptivily
 bool updateNewControlPosition = false;//on change position if new position recv
 CommMutex coordMutex;
-double xLongitude, yLatitude, zAltitude;//meeds mutex :(
+double xLongitude, yLatitude, zAltitude;//no race condition only write in waypoint command callback
 
 
 CommThread gcs_control_thread;
 
 
 /**
-   Enable Control for GCS.
+   Enable Control from GCS.
 */
 void TakeControl(bool enable) 
 {
   CommLock lock(controlMutex);
   under_gcsControl = enable;
 }
-
 
 /**
    Finish flying.
@@ -64,7 +65,13 @@ void FinishFlying(bool enable) {
   CommLock lock(flyingMutex);
   doneFlying = enable;
 }
-
+/** 
+  waypoint has changed update
+*/
+void UpdatedControl(bool enable){
+	CommLock lock(updateNewControlPosition);
+	updateControlMutex = enable;
+}
 
 //uart_interface global class objects
 //putting it on the heap for now because I don't want default constructor to be called
@@ -81,7 +88,7 @@ void gcsControlThread()
         {
             if(!onboard_control_active)//enable control
             {
-                printf("SEND OFFBOARD COMMANDS\n");
+                printf("Turning Offboard Contorl On\n");
                 autopilot_interface->enable_offboard_control();
                 onboard_control_active = true;
                 usleep(100);
@@ -90,6 +97,7 @@ void gcsControlThread()
             if(updateNewControlPosition){
                 mavlink_set_position_target_local_ned_t sp;
     
+				printf("Updating new waypoint\n");
                 //the x y z could be wrong?
                 set_position(xLongitude, // [m] X
                         yLatitude, // [m] Y
@@ -99,13 +107,15 @@ void gcsControlThread()
                 
                 //apply changes    
                 autopilot_interface->update_setpoint(sp);
+				UpdatedControl(false);//new way point processed
             }
         }
-        else
+        else//either GCS will turn control off or position is reached and control is turned off
         {
             //are we in control?
             if(onboard_control_active){
                 //disable control
+				printf("Turning Offboard Contorl Off\n");
                 onboard_control_active = false;
                 autopilot_interface->disable_offboard_control();
             }
@@ -132,7 +142,6 @@ void gcsControlThread()
 error_t VehicleModeCommandCallback(const comnet::Header& header, const VehicleModeCommand & packet, comnet::Comms& node) {
 
   TakeControl(packet.vehicle_mode); // 0 for autonomous. Maybe enum is better?
-  //gcsControl = packet.vehicle_mode;//0 for autonomous
   printf("CommandMode: %d\n", under_gcsControl);
   return comnet::CALLBACK_SUCCESS;    
 }
@@ -141,8 +150,8 @@ error_t VehicleWaypointCommandCallback(const comnet::Header& header, const Vehic
 
     xLongitude = packet.longitude; // [m] X
     yLatitude = packet.latitude; // [m] Y
-    zAltitude = packet.altitude;// [m] Z
-    
+    zAltitude = packet.altitude;// [m] Z	
+	UpdatedControl(true);//let the thread know new way point recieved  
     printf("New Position Recv: %f %f %f\n", packet.longitude, packet.latitude, packet.altitude);
   return comnet::CALLBACK_SUCCESS | comnet::CALLBACK_DESTROY_PACKET;
 }
@@ -186,17 +195,13 @@ int main()
 
   while (StillTicking()) {    
     // copy current messages
-	Mavlink_Messages messages = autopilot_interface->current_messages;
+	
     
     //@TODO this need to be changed to send this data to GCS (1)
     // local position in ned frame
-	mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;
-	
-        
-        
-        
+	//Mavlink_Messages messages = autopilot_interface->current_messages;
+	//mavlink_local_position_ned_t pos = autopilot_interface->current_messages.local_position_ned;        
 	//printf("    pos  (NED):  %f %f %f (m)\n", pos.x, pos.y, pos.z );
-
 	// hires imu
 	//mavlink_highres_imu_t imu = messages.highres_imu;
 	//printf("Got message HIGHRES_IMU (spec: https://pixhawk.ethz.ch/mavlink/#HIGHRES_IMU)\n");
@@ -221,5 +226,8 @@ int main()
 
   TakeControl(false);
   FinishFlying(true);  
-  gcs_control_thread.Join();
+  usleep(200);
+  if(gcs_control_thread.joinable()){
+	gcs_control_thread.Join();
+  }
 }
