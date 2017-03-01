@@ -44,7 +44,7 @@ CommMutex coordMutex;
 double xLongitude, yLatitude, zAltitude;//meeds mutex :(
 
 
-CommThread gcs_thread;
+CommThread gcs_control_thread;
 
 
 /**
@@ -221,5 +221,5 @@ int main()
 
   TakeControl(false);
   FinishFlying(true);  
-  gcs_contorl_thread.Join();
+  gcs_control_thread.Join();
 }
