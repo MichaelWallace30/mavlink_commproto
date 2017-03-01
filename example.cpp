@@ -18,6 +18,10 @@ using namespace ngcp;
 #include "autopilot_interface.h"
 #include "serial_port.h"
 
+
+int const GCS_NODE_ID = 1;
+int const THIS_UAV_ID = 2;//change this id for you UAV *IMPORTANT
+
 // ticks.
 typedef uint32_t tick_t;
 
@@ -164,18 +168,18 @@ int main()
   gcs_control_thread = CommThread(gcsControlThread);
 
   //CommProtocol
-  Comms uav(2);
+  Comms uav(THIS_UAV_ID);
   uav.LoadKey("NGCP PROJECT 2016");
   
   
   //xbee mode
   // Configure these! port of xbee FTDI dongle and MAC address of Xbee
   //uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
-  //uav.AddAddress(1, "address");
+  //uav.AddAddress(GCS_NODE_ID, "address");
   
   //udp mode for lcoal testing
   uav.InitConnection(UDP_LINK, "1337", "127.0.0.1");
-  uav.AddAddress(1, "127.0.0.1", 1338);
+  uav.AddAddress(GCS_NODE_ID, "127.0.0.1", 1338);
   
   //c_uart_interface  port of FTDI/Serial which goes to pixhawk    
   serial_port = new Serial_Port("/dev/ttyACM0", 57600);
@@ -198,11 +202,22 @@ int main()
 		
 	// local position in ned frame
 	Mavlink_Messages messages = autopilot_interface->current_messages;
-	mavlink_battery_status_t my_battery_status = messages.battery_status;
+        
+        
+        //get and send battery
+	Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
+        uav.Send(myBatteryStatus, GCS_NODE_ID);
+        
+        //how does this differ from global position?
+        //messages.local_position_ned.x;
+        //messages.local_position_ned.y;
+        //messages.local_position_ned.z;
 	
-	Battery myBatteryStatus(my_battery_status.battery_remaining);// 0 is 0%: 100 is 100%
-	
-    //@TODO this need to be changed to send this data to GCS (1)
+        
+        //position target??? local and global
+        
+        
+        //@TODO this need to be changed to send this data to GCS (1)
 	/*				AVAILBLE DATA INSIDE current_messages
 	int sysid;
 	int compid;
