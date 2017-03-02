@@ -513,6 +513,9 @@ int main()
 
 //@TODO Possible commands to control waypoints and attitude
 //https://pixhawk.ethz.ch/mavlink/
+
+//recv mavlink_msg_autopilot_version.h and check capabilities for control
+
 //MAV_PROTOCOL_CAPABILITY
 //Bitmask of (optional) autopilot capabilities (64 bit). If a bit is set, the autopilot supports this capability.
 //64	MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET	Autopilot supports commanding attitude offboard.
