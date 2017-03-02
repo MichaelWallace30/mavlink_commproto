@@ -229,6 +229,23 @@ void UpdatedControl(bool enable){
 Serial_Port *serial_port;
 Autopilot_Interface *autopilot_interface;
 
+
+//!!!WARNING currently setting local position not GPS position WARNING!!!
+/** This loop is a contorl loop that will be active under gcs control
+	
+	1)First check are we flying?  
+		Yes: Loop this thread 
+		No:  End thread
+		2)Under GCS contro?
+			Yes: 
+				3A)Do we need to turn offboard control on?
+					Yes: active control
+				3B)Do we have a new waypoint?
+					Yes: update waypoint
+			No:
+				3C)Do we need to turn offboard control off?
+					Yes: turn control off
+*/
 void gcsControlThread()
 {
 
@@ -346,21 +363,21 @@ int main()
 
   while (StillTicking()) {    
         
-		
-	// local position in ned frame
-	Mavlink_Messages messages = autopilot_interface->current_messages;
+  // local position in ned frame
+  Mavlink_Messages messages = autopilot_interface->current_messages;
         
-        //get and send battery
-	Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
+  //get and send battery
+  Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
   uav.Send(myBatteryStatus, GCS_NODE_ID);
   
-  //  TODO(): This may be wrong.
+  // System status
   VehicleSystemStatus my_systemStatus;
   my_systemStatus.vehicle_id = uav.GetUniqueId(); // system id...
   my_systemStatus.vehicle_mode = under_gcsControl; // vehicle mode.
   my_systemStatus.vehicle_state = messages.sys_status.onboard_control_sensors_present; // I'm going to assume that is what vehicle state is...
   uav.Send(my_systemStatus, GCS_NODE_ID);
 
+  //gps
   VehicleGlobalPosition my_globalPosition(
     uav.GetUniqueId(), 
     messages.global_position_int.lon, 
@@ -372,30 +389,16 @@ int main()
   );
   uav.Send(my_globalPosition, GCS_NODE_ID);
 
+  //attitude
   VehicleAttitude my_attitude(
     uav.GetUniqueId(),
     messages.attitude.roll,
     messages.attitude.pitch,
     messages.attitude.yaw
   );
-  uav.Send(my_attitude, GCS_NODE_ID);
+  uav.Send(my_attitude, GCS_NODE_ID);//sassy
 
-  VehicleIdentification my_identification(
-    uav.GetUniqueId(),
-    0xFF // something 8-bit that needs to identify vehicle types.
-  );
-  
-
-  HeartBeat heartbeat;
-  heartbeat.autopilot = messages.heartbeat.autopilot;
-  heartbeat.base_mode = messages.heartbeat.base_mode;
-  heartbeat.custom_mode = messages.heartbeat.custom_mode;
-  heartbeat.mavlink_version = messages.heartbeat.mavlink_version;
-  heartbeat.system_status = messages.heartbeat.system_status;
-  heartbeat.type = messages.heartbeat.type;
-  uav.Send(heartbeat, GCS_NODE_ID);
-
-
+  //gyro
   HighResGyro gyro;
   gyro.fields_updated = messages.highres_imu.fields_updated;
   gyro.abs_pressure = messages.highres_imu.abs_pressure;
@@ -415,6 +418,23 @@ int main()
   uav.Send(gyro, GCS_NODE_ID);
 
   // not sending.
+  
+    /* I don't think any one needs this
+  VehicleIdentification my_identification(
+    uav.GetUniqueId(),
+    0xFF // something 8-bit that needs to identify vehicle types.
+  );
+  
+  HeartBeat heartbeat;
+  heartbeat.autopilot = messages.heartbeat.autopilot;
+  heartbeat.base_mode = messages.heartbeat.base_mode;
+  heartbeat.custom_mode = messages.heartbeat.custom_mode;
+  heartbeat.mavlink_version = messages.heartbeat.mavlink_version;
+  heartbeat.system_status = messages.heartbeat.system_status;
+  heartbeat.type = messages.heartbeat.type;
+  uav.Send(heartbeat, GCS_NODE_ID);
+  */
+  
 
         //how does this differ from global position?
         // Ans: I'm guessing position relative to something, maybe the displacement between this vehicle and gcs.
@@ -490,3 +510,12 @@ int main()
   gcs_control_thread.Join();
   
 }
+
+
+//@TODO Possible commands to control waypoints and attitude
+//https://pixhawk.ethz.ch/mavlink/
+//MAV_PROTOCOL_CAPABILITY
+//Bitmask of (optional) autopilot capabilities (64 bit). If a bit is set, the autopilot supports this capability.
+//64	MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET	Autopilot supports commanding attitude offboard.
+//128	MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED	Autopilot supports commanding position and velocity targets in local NED frame.
+//256	MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_GLOBAL_INT	Autopilot supports commanding position and velocity targets in global scaled integers.
