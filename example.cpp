@@ -25,6 +25,147 @@ using namespace ngcp;
 #include "serial_port.h"
 
 
+struct HeartBeat : INHERITS_ABSPACKET {
+  HeartBeat(
+    uint8_t autopilot = 0,
+    uint8_t base_mode = 0,
+    uint32_t custom_mode = 0,
+    uint8_t mavlink_version = 0,
+    uint8_t system_status = 0,
+    uint8_t type = 0) :
+    autopilot(autopilot)
+    , base_mode(base_mode)
+    , custom_mode(custom_mode)
+    , mavlink_version(mavlink_version)
+    , system_status(system_status)
+    , type(type)
+    , CHAIN_ABSPACKET(HeartBeat)
+  { }
+
+  void Pack(REF_OBJECTSTREAM obj) override {
+    obj << custom_mode;
+    obj << base_mode;
+    obj << autopilot;
+    obj << mavlink_version;
+    obj << system_status;
+    obj << type;
+  }
+
+  void Unpack(REF_OBJECTSTREAM obj) override {
+    obj >> type;
+    obj >> system_status;
+    obj >> mavlink_version;
+    obj >> autopilot;
+    obj >> base_mode;
+    obj >> custom_mode;
+  }
+
+  ABSPACKET *Create() override {
+    return new HeartBeat();
+  }
+
+  uint32_t custom_mode;
+  uint8_t base_mode;
+  uint8_t autopilot;
+  uint8_t mavlink_version;
+  uint8_t system_status;
+  uint8_t type;
+};
+
+
+// Gyroscope information to send to GCS.
+struct HighResGyro : INHERITS_ABSPACKET {
+  HighResGyro(
+    uint64_t time_usec = 0,
+    real32_t abs_pressure = 0.0f,
+    real32_t diff_pressure = 0.0f,
+    real32_t temperature = 0.0f,
+    real32_t pressure_alt = 0.0f,
+    real32_t xacc = 0.0f,
+    real32_t xgyro = 0.0f,
+    real32_t xmag = 0.0f,
+    real32_t yacc = 0.0f,
+    real32_t ygyro = 0.0f,
+    real32_t ymag = 0.0f,
+    real32_t zacc = 0.0f,
+    real32_t zgyro = 0.0f,
+    real32_t zmag = 0.0f,
+    uint16_t fields_updated = 0) 
+    : CHAIN_ABSPACKET(HighResGyro)
+    , time_usec(time_usec)
+    , abs_pressure(abs_pressure)
+    , diff_pressure(diff_pressure)
+    , temperature(temperature)
+    , pressure_alt(pressure_alt)
+    , xacc(xacc)
+    , xgyro(xgyro)
+    , xmag(xmag)
+    , yacc(yacc)
+    , ygyro(ygyro)
+    , ymag(ymag)
+    , zacc(zacc)
+    , zgyro(zgyro)
+    , zmag(zmag)
+  { }
+
+  void Pack(REF_OBJECTSTREAM obj) override {
+    obj << time_usec;
+    obj << abs_pressure;
+    obj << diff_pressure;
+    obj << temperature;
+    obj << pressure_alt;
+    obj << xacc;
+    obj << xgyro;
+    obj << xmag;
+    obj << yacc;
+    obj << ygyro;
+    obj << ymag;
+    obj << zacc;
+    obj << zgyro;
+    obj << zmag;
+    obj << fields_updated;
+  }
+
+  void Unpack(REF_OBJECTSTREAM obj) override {
+    obj >> fields_updated;
+    obj >> zmag;
+    obj >> zgyro;
+    obj >> zacc;
+    obj >> ymag;
+    obj >> ygyro;
+    obj >> yacc;
+    obj >> xmag;
+    obj >> xgyro;
+    obj >> xacc;
+    obj >> pressure_alt;
+    obj >> temperature;
+    obj >> diff_pressure;
+    obj >> abs_pressure;
+    obj >> time_usec;
+  }
+
+  ABSPACKET *Create() override {
+    return new HighResGyro();
+  }
+
+  uint64_t time_usec;
+  real32_t abs_pressure;
+  real32_t diff_pressure;
+  real32_t temperature;
+  real32_t pressure_alt;
+  real32_t xacc;
+  real32_t xgyro;
+  real32_t xmag;
+  real32_t yacc;
+  real32_t ygyro;
+  real32_t ymag;
+  real32_t zacc;
+  real32_t zgyro;
+  real32_t zmag;
+  uint16_t fields_updated;
+};
+
+
 int const GCS_NODE_ID = 1;
 int const THIS_UAV_ID = 2;//change this id for you UAV *IMPORTANT
 
@@ -32,7 +173,7 @@ int const THIS_UAV_ID = 2;//change this id for you UAV *IMPORTANT
 typedef uint32_t tick_t;
 
 tick_t tick = 0;
-tick_t tick_limit = 500;
+bool is_ticking = true;
 
 inline void Tick() {
   tick++;
@@ -40,7 +181,7 @@ inline void Tick() {
 }
 
 inline bool StillTicking() {
-  return tick <= tick_limit;//what in the retardation
+  return is_ticking;//what in the retardation
 }
 
 
@@ -243,6 +384,36 @@ int main()
     uav.GetUniqueId(),
     0xFF // something 8-bit that needs to identify vehicle types.
   );
+  
+
+  HeartBeat heartbeat;
+  heartbeat.autopilot = messages.heartbeat.autopilot;
+  heartbeat.base_mode = messages.heartbeat.base_mode;
+  heartbeat.custom_mode = messages.heartbeat.custom_mode;
+  heartbeat.mavlink_version = messages.heartbeat.mavlink_version;
+  heartbeat.system_status = messages.heartbeat.system_status;
+  heartbeat.type = messages.heartbeat.type;
+  uav.Send(heartbeat, GCS_NODE_ID);
+
+
+  HighResGyro gyro;
+  gyro.fields_updated = messages.highres_imu.fields_updated;
+  gyro.abs_pressure = messages.highres_imu.abs_pressure;
+  gyro.diff_pressure = messages.highres_imu.diff_pressure;
+  gyro.pressure_alt = messages.highres_imu.pressure_alt;
+  gyro.temperature = messages.highres_imu.temperature;
+  gyro.time_usec = messages.highres_imu.time_usec;
+  gyro.xacc = messages.highres_imu.xacc;
+  gyro.xgyro = messages.highres_imu.xgyro;
+  gyro.xmag = messages.highres_imu.xmag;
+  gyro.yacc = messages.highres_imu.yacc;
+  gyro.ygyro = messages.highres_imu.ygyro;
+  gyro.ymag = messages.highres_imu.ymag;
+  gyro.zacc = messages.highres_imu.zacc;
+  gyro.zgyro = messages.highres_imu.zgyro;
+  gyro.zmag = messages.highres_imu.zmag;
+  uav.Send(gyro, GCS_NODE_ID);
+
   // not sending.
 
         //how does this differ from global position?
