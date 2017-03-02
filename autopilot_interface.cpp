@@ -351,6 +351,13 @@ read_messages()
 					this_timestamps.attitude = current_messages.time_stamps.attitude;
 					break;
 				}
+				
+				case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
+				{
+					mavlink_msg_autopilot_version_decode(&message, &(current_messages.autopolot_version));
+					current_messages.time_stamps.autopilot_version = get_time_usec();
+					this_timestamps.autopilot_version = current_messages.time_stamps.autopilot_version;
+				}
 
 				default:
 				{
