@@ -6,7 +6,6 @@ using namespace comnet;
 //@TODO fix cmake
 
 //which packet do you want sucka???
-#include <VehicleTelemetryCommand.hpp>
 #include <VehicleTerminationCommand.hpp>
 #include <VehicleWaypointCommand.hpp>
 #include <VehicleAttitude.hpp>
@@ -14,7 +13,7 @@ using namespace comnet;
 #include <VehicleGlobalPosition.hpp>
 #include <VehicleIdentification.hpp>
 #include <VehicleTelemetryCommand.hpp>
-#include <VehicleTerminationCommand.hpp>
+
 
 // Dont' know what packet to include? Include them all!!
 #include <Packets.hpp>
