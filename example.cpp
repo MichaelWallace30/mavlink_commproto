@@ -369,7 +369,7 @@ int main()
   //128 position target local ned
   //256 position target clobal
   
-  printf("Autopilot version capabilities: %d\n", messages.autopilot_version.capabilities & 0x100);
+  printf("Autopilot version capabilities: %d\n", messages.autopilot_version.capabilities);
   //get and send battery
   Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
   uav.Send(myBatteryStatus, GCS_NODE_ID);
@@ -519,7 +519,11 @@ int main()
 //@TODO Possible commands to control waypoints and attitude
 //https://pixhawk.ethz.ch/mavlink/
 
+//@TODO need to send new commands
+//checking message need to request the data I think MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES
 //recv mavlink_msg_autopilot_version.h and check capabilities for control
+
+//MAV_CMD bunch of options look them up
 
 //MAV_PROTOCOL_CAPABILITY
 //Bitmask of (optional) autopilot capabilities (64 bit). If a bit is set, the autopilot supports this capability.

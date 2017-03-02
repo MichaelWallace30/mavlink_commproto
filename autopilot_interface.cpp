@@ -354,6 +354,7 @@ read_messages()
 				
 				case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
 				{
+                                        printf("recv version\n");
 					mavlink_msg_autopilot_version_decode(&message, &(current_messages.autopilot_version));
 					current_messages.time_stamps.autopilot_version = get_time_usec();
 					this_timestamps.autopilot_version = current_messages.time_stamps.autopilot_version;
@@ -362,6 +363,7 @@ read_messages()
 				default:
 				{
 					// printf("Warning, did not handle message id %i\n",message.msgid);
+                                        //printf("message not processed %d\n",message.msgid);
 					break;
 				}
 
