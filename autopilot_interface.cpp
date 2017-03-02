@@ -354,7 +354,7 @@ read_messages()
 				
 				case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
 				{
-					mavlink_msg_autopilot_version_decode(&message, &(current_messages.autopolot_version));
+					mavlink_msg_autopilot_version_decode(&message, &(current_messages.autopilot_version));
 					current_messages.time_stamps.autopilot_version = get_time_usec();
 					this_timestamps.autopilot_version = current_messages.time_stamps.autopilot_version;
 				}

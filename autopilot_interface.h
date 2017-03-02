@@ -163,7 +163,7 @@ struct Time_Stamps
 		position_target_global_int = 0;
 		highres_imu = 0;
 		attitude = 0;
-		autopilot_versoin = 0;
+		autopilot_version = 0;
 	}
 
 };
@@ -207,7 +207,7 @@ struct Mavlink_Messages {
 	mavlink_attitude_t attitude;
 	
 	//version 
-	mavlink_autopilot_version_t autopilot_versoin;
+	mavlink_autopilot_version_t autopilot_version;
 
 	// System Parameters?
 

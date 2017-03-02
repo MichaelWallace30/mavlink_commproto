@@ -369,7 +369,7 @@ int main()
   //128 position target local ned
   //256 position target clobal
   
-  printf("Autopilot versoin capabilities: %d\n", messages.autopilot_versoin.capabilities & 0x100);
+  printf("Autopilot version capabilities: %d\n", messages.autopilot_version.capabilities & 0x100);
   //get and send battery
   Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
   uav.Send(myBatteryStatus, GCS_NODE_ID);
