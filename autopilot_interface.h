@@ -262,7 +262,7 @@ public:
 	Mavlink_Messages current_messages;
 	mavlink_set_position_target_local_ned_t initial_position;
 
-	void update_setpoint(mavlink_set_position_target_local_ned_t setpoint);
+	void update_setpoint(mavlink_set_position_target_global_int_t setpoint);
 	void read_messages();
 	int  write_message(mavlink_message_t message);
 
@@ -287,7 +287,7 @@ private:
 	pthread_t read_tid;
 	pthread_t write_tid;
 
-	mavlink_set_position_target_local_ned_t current_setpoint;
+	mavlink_set_position_target_global_int_t current_setpoint;
 
 	void read_thread();
 	void write_thread(void);

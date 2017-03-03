@@ -219,13 +219,10 @@ Autopilot_Interface::
 // ------------------------------------------------------------------------------
 //   Update Setpoint
 // ------------------------------------------------------------------------------
-void
-Autopilot_Interface::
-update_setpoint(mavlink_set_position_target_local_ned_t setpoint)
+void Autopilot_Interface::update_setpoint(mavlink_set_position_target_global_int_t setpoint)
 {
-	current_setpoint = setpoint;
+		current_setpoint = setpoint;
 }
-
 
 // ------------------------------------------------------------------------------
 //   Read Messages
@@ -425,10 +422,10 @@ write_setpoint()
 	// --------------------------------------------------------------------------
 
 	// pull from position target
-	mavlink_set_position_target_local_ned_t sp = current_setpoint;
+	mavlink_set_position_target_global_int_t sp = current_setpoint;
 
 	// double check some system parameters
-	if ( not sp.time_boot_ms )
+	if ( not sp.time_boot_ms)
 		sp.time_boot_ms = (uint32_t) (get_time_usec()/1000);
 	sp.target_system    = system_id;
 	sp.target_component = autopilot_id;

@@ -262,7 +262,7 @@ void gcsControlThread()
             }
             
             if(updateNewControlPosition){
-                mavlink_set_position_target_local_ned_t sp;
+														mavlink_set_position_target_global_int_t sp;
     
 				printf("Updating new waypoint\n");
                 //the x y z could be wrong?
