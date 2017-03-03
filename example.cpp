@@ -556,7 +556,7 @@ void gcs_control_thread ==> change mavlink_set_position_target_local_ned_t
 
 //MAV_PROTOCOL_CAPABILITY
 //       MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT 86
-		mavlink_set_position_target_global_int_t
+//		mavlink_set_position_target_global_int_t
 //Bitmask of (optional) autopilot capabilities (64 bit). If a bit is set, the autopilot supports this capability.
 //64	MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET	Autopilot supports commanding attitude offboard.
 //128	MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED	Autopilot supports commanding position and velocity targets in local NED frame.
