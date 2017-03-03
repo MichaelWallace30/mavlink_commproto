@@ -351,7 +351,7 @@ read_messages()
 					this_timestamps.attitude = current_messages.time_stamps.attitude;
 					break;
 				}
-				
+
 				case MAVLINK_MSG_ID_AUTOPILOT_VERSION:
 				{
                                         printf("recv version\n");
@@ -425,7 +425,7 @@ write_setpoint()
 	// --------------------------------------------------------------------------
 
 	// pull from position target
-	mavlink_set_position_target_local_ned_t sp = current_setpoint;	
+	mavlink_set_position_target_local_ned_t sp = current_setpoint;
 
 	// double check some system parameters
 	if ( not sp.time_boot_ms )
@@ -807,8 +807,9 @@ write_thread(void)
 	// signal startup
 	writing_status = 2;
 
+	// changed from local to global
 	// prepare an initial setpoint, just stay put
-	mavlink_set_position_target_local_ned_t sp;
+	mavlink_set_position_target_global_int_t sp;
 	sp.type_mask = MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_VELOCITY &
 				   MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_RATE;
 	sp.coordinate_frame = MAV_FRAME_LOCAL_NED;
@@ -871,6 +872,3 @@ start_autopilot_interface_write_thread(void *args)
 	// done!
 	return NULL;
 }
-
-
-
