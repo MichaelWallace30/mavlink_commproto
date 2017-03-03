@@ -806,8 +806,8 @@ write_thread(void)
 	// changed from local to global
 	// prepare an initial setpoint, just stay put
 	mavlink_set_position_target_global_int_t sp;
-	sp.type_mask = MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_VELOCITY &
-				   MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_RATE;
+	sp.type_mask = MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_VELOCITY &
+				   MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_YAW_RATE;
 	sp.coordinate_frame = MAV_FRAME_LOCAL_NED;
 	sp.vx       = 0.0;
 	sp.vy       = 0.0;
