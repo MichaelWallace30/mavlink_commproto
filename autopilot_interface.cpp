@@ -435,7 +435,7 @@ write_setpoint()
 	// --------------------------------------------------------------------------
 
 	mavlink_message_t message;
-	mavlink_msg_set_position_target_local_ned_encode(system_id, companion_id, &message, &sp);
+	mavlink_msg_set_position_target_global_int_encode(system_id, companion_id, &message, &sp);
 
 
 	// --------------------------------------------------------------------------
