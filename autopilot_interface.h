@@ -102,12 +102,12 @@
  */
 
                                                 // bit number  876543210987654321
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_POSITION     0b0000110111111000
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_VELOCITY     0b0000110111000111
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_ACCELERATION 0b0000110000111111
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_FORCE        0b0000111000111111
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_ANGLE    0b0000100111111111
-#define MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_RATE     0b0000010111111111
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_POSITION     0b0000110111111000
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_VELOCITY     0b0000110111000111
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_ACCELERATION 0b0000110000111111
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_FORCE        0b0000111000111111
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_YAW_ANGLE    0b0000100111111111
+#define MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_YAW_RATE     0b0000010111111111
 
 
 // ------------------------------------------------------------------------------
@@ -117,11 +117,11 @@
 
 // helper functions
 uint64_t get_time_usec();
-void set_position(float x, float y, float z, mavlink_set_position_target_local_ned_t &sp);
-void set_velocity(float vx, float vy, float vz, mavlink_set_position_target_local_ned_t &sp);
-void set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local_ned_t &sp);
-void set_yaw(float yaw, mavlink_set_position_target_local_ned_t &sp);
-void set_yaw_rate(float yaw_rate, mavlink_set_position_target_local_ned_t &sp);
+void set_position(int32_t lat_int, int32_t lon_int, float alt, mavlink_set_position_target_global_int_t &sp);
+void set_velocity(float vx, float vy, float vz, mavlink_set_position_target_global_int_t &sp);
+void set_acceleration(float ax, float ay, float az, mavlink_set_position_target_global_int_t &sp);
+void set_yaw(float yaw, mavlink_set_position_target_global_int_t &sp);
+void set_yaw_rate(float yaw_rate, mavlink_set_position_target_global_int_t &sp);
 
 void* start_autopilot_interface_read_thread(void *args);
 void* start_autopilot_interface_write_thread(void *args);
@@ -287,7 +287,7 @@ private:
 	pthread_t read_tid;
 	pthread_t write_tid;
 
-	mavlink_set_position_target_local_ned_t current_setpoint;
+	mavlink_set_position_target_global_int_t current_setpoint;
 
 	void read_thread();
 	void write_thread(void);

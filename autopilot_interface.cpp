@@ -74,57 +74,56 @@ get_time_usec()
 // choose one of the next three
 
 /*
- * Set target local ned position
+ * Set target global int position
  *
- * Modifies a mavlink_set_position_target_local_ned_t struct with target XYZ locations
- * in the Local NED frame, in meters.
+ * Modifies a mavlink_set_position_target_global_int_t struct with target LatLon locations
+ * in the global int frame, in meters.
  */
 void
-set_position(float x, float y, float z, mavlink_set_position_target_local_ned_t &sp)
+set_position(int32_t lat_int,int32_t lon_int,float alt, mavlink_set_position_target_global_int_t &sp)
 {
 	sp.type_mask =
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_POSITION;
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_POSITION;
 
-	sp.coordinate_frame = MAV_FRAME_LOCAL_NED;
+	sp.coordinate_frame = MAV_FRAME_GLOBAL_INT;
 
-	sp.x   = x;
-	sp.y   = y;
-	sp.z   = z;
-
-	printf("POSITION SETPOINT XYZ = [ %.4f , %.4f , %.4f ] \n", sp.x, sp.y, sp.z);
+	sp.lat_int = lat_int;
+	sp.lon_int = lon_int;
+	sp.alt = alt;
+	printf("POSITION SETPOINT LatLon = [ %d , %d ] \n", sp.lat_int,sp.lon_int);
 
 }
 
 /*
- * Set target local ned velocity
+ * Set target global int velocity
  *
- * Modifies a mavlink_set_position_target_local_ned_t struct with target VX VY VZ
- * velocities in the Local NED frame, in meters per second.
+ * Modifies a mavlink_set_position_target_global_int_t struct with target VX VY VZ
+ * velocities in the global int frame, in meters per second.
  */
 void
-set_velocity(float vx, float vy, float vz, mavlink_set_position_target_local_ned_t &sp)
+set_velocity(float vx, float vy, float vz, mavlink_set_position_target_global_int_t &sp)
 {
 	sp.type_mask =
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_VELOCITY     ;
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_VELOCITY     ;
 
-	sp.coordinate_frame = MAV_FRAME_LOCAL_NED;
+	sp.coordinate_frame = MAV_FRAME_GLOBAL_INT;
 
-	sp.vx  = vx;
-	sp.vy  = vy;
-	sp.vz  = vz;
+	sp.vx = vx;
+	sp.vy = vy;
+	sp.vz = vz;
 
 	//printf("VELOCITY SETPOINT UVW = [ %.4f , %.4f , %.4f ] \n", sp.vx, sp.vy, sp.vz);
 
 }
 
 /*
- * Set target local ned acceleration
+ * Set target global int acceleration
  *
- * Modifies a mavlink_set_position_target_local_ned_t struct with target AX AY AZ
- * accelerations in the Local NED frame, in meters per second squared.
+ * Modifies a mavlink_set_position_target_global_int_t struct with target AX AY AZ
+ * accelerations in the global int frame, in meters per second squared.
  */
 void
-set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local_ned_t &sp)
+set_acceleration(float ax, float ay, float az, mavlink_set_position_target_global_int_t &sp)
 {
 
 	// NOT IMPLEMENTED
@@ -133,10 +132,10 @@ set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local
 
 
 	sp.type_mask =
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_ACCELERATION &
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_VELOCITY     ;
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_ACCELERATION &
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_VELOCITY     ;
 
-	sp.coordinate_frame = MAV_FRAME_LOCAL_NED;
+	sp.coordinate_frame = MAV_FRAME_GLOBAL_INT;
 
 	sp.afx  = ax;
 	sp.afy  = ay;
@@ -146,16 +145,16 @@ set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local
 // the next two need to be called after one of the above
 
 /*
- * Set target local ned yaw
+ * Set target global int yaw
  *
- * Modifies a mavlink_set_position_target_local_ned_t struct with a target yaw
- * in the Local NED frame, in radians.
+ * Modifies a mavlink_set_position_target_global_int_t struct with a target yaw
+ * in the global int frame, in radians.
  */
 void
-set_yaw(float yaw, mavlink_set_position_target_local_ned_t &sp)
+set_yaw(float yaw, mavlink_set_position_target_global_int_t &sp)
 {
 	sp.type_mask &=
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_ANGLE ;
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_YAW_ANGLE ;
 
 	sp.yaw  = yaw;
 
@@ -164,16 +163,16 @@ set_yaw(float yaw, mavlink_set_position_target_local_ned_t &sp)
 }
 
 /*
- * Set target local ned yaw rate
+ * Set target global int yaw rate
  *
- * Modifies a mavlink_set_position_target_local_ned_t struct with a target yaw rate
- * in the Local NED frame, in radians per second.
+ * Modifies a mavlink_set_position_target_global_int_t struct with a target yaw rate
+ * in the globabl int frame, in radians per second.
  */
 void
-set_yaw_rate(float yaw_rate, mavlink_set_position_target_local_ned_t &sp)
+set_yaw_rate(float yaw_rate, mavlink_set_position_target_global_int_t &sp)
 {
 	sp.type_mask &=
-		MAVLINK_MSG_SET_POSITION_TARGET_LOCAL_NED_YAW_RATE ;
+		MAVLINK_MSG_SET_POSITION_TARGET_GLOBAL_INT_YAW_RATE ;
 
 	sp.yaw_rate  = yaw_rate;
 }
@@ -221,7 +220,7 @@ Autopilot_Interface::
 // ------------------------------------------------------------------------------
 void
 Autopilot_Interface::
-update_setpoint(mavlink_set_position_target_local_ned_t setpoint)
+update_setpoint(mavlink_set_position_target_global_int_t setpoint)
 {
 	current_setpoint = setpoint;
 }
