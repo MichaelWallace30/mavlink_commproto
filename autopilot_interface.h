@@ -276,8 +276,8 @@ public:
 	void start_write_thread(void);
 
 	void handle_quit( int sig );
-
-
+	void send_global_position(mavlink_set_position_target_global_int_t globalpoint);
+	
 private:
 
 	Serial_Port *serial_port;

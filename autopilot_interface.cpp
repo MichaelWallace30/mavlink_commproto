@@ -425,7 +425,7 @@ write_setpoint()
 	// --------------------------------------------------------------------------
 
 	// pull from position target
-	mavlink_set_position_target_local_ned_t sp = current_setpoint;
+	mavlink_set_position_target_local_ned_t sp = current_setpoint;	
 
 	// double check some system parameters
 	if ( not sp.time_boot_ms )
@@ -775,8 +775,6 @@ handle_quit( int sig )
 	}
 
 }
-
-
 
 // ------------------------------------------------------------------------------
 //   Read Thread

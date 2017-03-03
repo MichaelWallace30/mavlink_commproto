@@ -516,10 +516,39 @@ int main()
 }
 
 
-//@TODO Possible commands to control waypoints and attitude
+//@TODO
+// switch all mavlink_set_position_target_local_ned_t (to)=====> mavlink_set_position_target_global_int_t
+//header locations
+//      c_library\common\mavlink_msg_set_poistion_target_global_int.h
+//      c_library\common\mavlink_msg_set_target_local_net.h
+//
+//		look up the struct to make sure you use the proper variables
+//		make sure you take in consideration .type_mask Bitmask to indicate which dimensions should be ignored (look at header)
+//
+
+/*
+
+mavlink_set_position_target_local_ned_t current_setpoint; ==> change
+
+//update data
+void set_position(float x, float y, float z, mavlink_set_position_target_local_ned_t &sp);
+void set_velocity(float vx, float vy, float vz, mavlink_set_position_target_local_ned_t &sp);
+void set_acceleration(float ax, float ay, float az, mavlink_set_position_target_local_ned_t &sp);
+void set_yaw(float yaw, mavlink_set_position_target_local_ned_t &sp);
+void set_yaw_rate(float yaw_rate, mavlink_set_position_target_local_ned_t &sp);
+
+//serial writing
+void update_setpoint(mavlink_set_position_target_local_ned_t setpoint);
+void write_setpoint()
+void write_thread()
+//this file
+void gcs_control_thread ==> change mavlink_set_position_target_local_ned_t 
+
+*/
+
+
 //https://pixhawk.ethz.ch/mavlink/
 
-//@TODO need to send new commands
 //checking message need to request the data I think MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES
 //recv mavlink_msg_autopilot_version.h and check capabilities for control
 
@@ -527,7 +556,7 @@ int main()
 
 //MAV_PROTOCOL_CAPABILITY
 //       MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT 86
-//		mavlink_set_position_target_global_int_t
+		mavlink_set_position_target_global_int_t
 //Bitmask of (optional) autopilot capabilities (64 bit). If a bit is set, the autopilot supports this capability.
 //64	MAV_PROTOCOL_CAPABILITY_SET_ATTITUDE_TARGET	Autopilot supports commanding attitude offboard.
 //128	MAV_PROTOCOL_CAPABILITY_SET_POSITION_TARGET_LOCAL_NED	Autopilot supports commanding position and velocity targets in local NED frame.
