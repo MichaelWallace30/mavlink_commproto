@@ -1,5 +1,6 @@
 #include <CommProto/commproto.h>
-
+float const E7 = 10000000.0;
+float const MM = 1000.0; //MM TO M
 
 using namespace comnet;
 
@@ -227,11 +228,7 @@ void UpdatedControl(bool enable){
 //putting it on the heap for now because I don't want default constructor to be called
 Serial_Port *serial_port;
 Autopilot_Interface *autopilot_interface;
-
-
-//!!!WARNING currently setting local position not GPS position WARNING!!!
-/** This loop is a contorl loop that will be active under gcs control
-	
+/*
 	1)First check are we flying?  
 		Yes: Loop this thread 
 		No:  End thread
@@ -334,7 +331,9 @@ int main()
   Comms uav(THIS_UAV_ID);
   uav.LoadKey("NGCP PROJECT 2016");
   
-  
+debug::Log::Suppress(comnet::debug::LOG_NOTIFY);
+debug::Log::Suppress(comnet::debug::LOG_NOTE);
+debug::Log::Suppress(comnet::debug::LOG_WARNING);
   //xbee mode
   // Configure these! port of xbee FTDI dongle and MAC address of Xbee
   //uav.InitConnection(ZIGBEE_LINK, "/dev/ttyUSB0", "address", 57600);
@@ -368,30 +367,34 @@ int main()
 		
   //128 position target local ned
   //256 position target clobal
-  
-  printf("Autopilot version capabilities: %d\n", messages.autopilot_version.capabilities);
+
+  //printf("Autopilot version capabilities: %f\n", (messages.autopilot_version.capabilities));
   //get and send battery
   Battery myBatteryStatus(messages.battery_status.battery_remaining);// 0 is 0%: 100 is 100%
-  uav.Send(myBatteryStatus, GCS_NODE_ID);
+  //uav.Send(myBatteryStatus, GCS_NODE_ID);
   
   // System status
   VehicleSystemStatus my_systemStatus;
   my_systemStatus.vehicle_id = uav.GetUniqueId(); // system id...
   my_systemStatus.vehicle_mode = under_gcsControl; // vehicle mode.
   my_systemStatus.vehicle_state = messages.sys_status.onboard_control_sensors_present; // I'm going to assume that is what vehicle state is...
-  uav.Send(my_systemStatus, GCS_NODE_ID);
+  //uav.Send(my_systemStatus, GCS_NODE_ID);
 
   //gps
   VehicleGlobalPosition my_globalPosition(
     uav.GetUniqueId(), 
-    messages.global_position_int.lon, 
-    messages.global_position_int.lat, 
-    messages.global_position_int.alt, 
+    messages.global_position_int.lon / E7, 
+    messages.global_position_int.lat / E7, 
+    messages.global_position_int.alt / MM, 
     messages.global_position_int.vx,
     messages.global_position_int.vy,
     messages.global_position_int.vz
   );
   uav.Send(my_globalPosition, GCS_NODE_ID);
+  
+  cout << "xLongitude: " << messages.global_position_int.lon / E7 << 
+  " yLatitude: " << messages.global_position_int.lat / E7 << 
+  " zAltitude: " << messages.global_position_int.alt / MM << std::endl;
 
   //attitude
   VehicleAttitude my_attitude(
@@ -400,7 +403,7 @@ int main()
     messages.attitude.pitch,
     messages.attitude.yaw
   );
-  uav.Send(my_attitude, GCS_NODE_ID);//sassy
+  //uav.Send(my_attitude, GCS_NODE_ID);//sassy
 
   //gyro
   HighResGyro gyro;
@@ -419,7 +422,7 @@ int main()
   gyro.zacc = messages.highres_imu.zacc;
   gyro.zgyro = messages.highres_imu.zgyro;
   gyro.zmag = messages.highres_imu.zmag;
-  uav.Send(gyro, GCS_NODE_ID);
+  //uav.Send(gyro, GCS_NODE_ID);
 
   // not sending.
   

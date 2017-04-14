@@ -1,6 +1,12 @@
 #include <CommProto/commproto.h>
 using namespace comnet;
 #include <VehicleWaypointCommand.hpp>
+#include <VehicleWaypointCommand.hpp>
+#include <VehicleModeCommand.hpp>
+#include <VehicleGlobalPosition.hpp>
+
+float const E7 = 10000000.0;
+float const MM = 1000.0; //MM TO M
 
 // Dont' know what packet to include? Include them all!!
 #include <Packets.hpp>
@@ -114,6 +120,15 @@ error_t HighResGyroCallback(const comnet::Header& header, const HighResGyro & pa
   return comnet::CALLBACK_SUCCESS;    
 }
 
+error_t VehicleGlobalPositionCallback(const comnet::Header& header, const VehicleGlobalPosition & packet, comnet::Comms& node) {
+
+  double xGyro = packet.longitude;
+  double yGyro = packet.latitude;
+  double zGyro = packet.altitude;
+  printf("Waypoint X: %f Y: %f Z: %f\n", xGyro, yGyro, zGyro);
+  return comnet::CALLBACK_SUCCESS;    
+}
+
 
 int main()
 {
@@ -148,13 +163,34 @@ int main()
       test.Send(vmc,2);
   }
   */
+
+debug::Log::Suppress(comnet::debug::LOG_NOTIFY);
+debug::Log::Suppress(comnet::debug::LOG_WARNING);
+debug::Log::Suppress(comnet::debug::LOG_NOTE);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   
-  test.LinkCallback(new HighResGyro(),    new comnet::Callback((comnet::callback_t)HighResGyroCallback));
+  //test.LinkCallback(new HighResGyro(),    new comnet::Callback((comnet::callback_t)HighResGyroCallback));
+  test.LinkCallback(new VehicleGlobalPosition(),    new comnet::Callback((comnet::callback_t)VehicleGlobalPositionCallback));
+  
+  double longitude = 0;
+  double latitude = 0;
+  double altitude = 0;
+  VehicleWaypointCommand vwc(1, longitude * E7, latitude * E7, altitude * MM);
+  VehicleModeCommand vmc(2,1);
+  
+  bool sendOnce = false;
   
   while(true)
   {
-	  
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      if(!sendOnce)
+      {
+        //test.Send(vmc,2);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        //test.Send(vwc,2);
+        sendOnce = true;
+      }
+    
   }
   
   test.Stop();
